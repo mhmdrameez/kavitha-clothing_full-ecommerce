@@ -22,7 +22,6 @@ jobs:
       - name: npm install and build and npm install
         run: |
           npm install
-          npm run build
           npm run start
 
         env: 
