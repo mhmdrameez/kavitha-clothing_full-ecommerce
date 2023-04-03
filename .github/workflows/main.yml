@@ -1,10 +1,9 @@
-name: CICD for Full-ecommerec
-
+name: CICD for Node.js
 
 on:
   push:
     branches:
-        - main
+      - main
 
 jobs:
   build:
@@ -15,40 +14,37 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Use node js
+      - name: Use node.js
         uses: actions/setup-node@v1
         with:
-         node-version: ${{ matrix.node-version }}
-      - name: npm install and build and npm install
+          node-version: ${{ matrix.node-version }}
+      - name: npm install and build
         run: |
           npm install
-          npm run start
+          npm run build
 
         env: 
           CI: true   
 
-
-  depoly:
+  deploy:
     needs: [build]
     runs-on: ubuntu-latest
 
     steps:
-     - name: executing remote ssh commands using password
-       uses: appleboy/ssh-action@v0.1.8
-       with:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v0.1.8
+        with:
           host: ${{ secrets.HOST }}
-          username:  ${{ secrets.USER }}
-          key:  ${{ secrets.KEY }}
-          port:  ${{ secrets.PORT }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
           script: |
-              curl -o-   https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh    | bash
-              . ~/.nvm/nvm.sh
-
-               nvm instal 14
-               npm install -g pm2
-               cd ~/kavitha-clothing_full-ecommerce
-               git pull origin main
-               npm install
-               npm run build
-               npm run start
-               pm2 restart api
+            curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+            . ~/.nvm/nvm.sh
+            nvm install 14
+            cd ~/EC2-CICD_Node_app
+            git pull origin main
+            npm install
+            npm run build
+            pm2 delete api || true # Stop and delete previous instance of the app if running
+            pm2 start npm --name "api" -- run start
