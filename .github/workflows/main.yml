@@ -1,0 +1,55 @@
+name: CICD for Full-ecommerec
+
+
+on:
+  push:
+    branches:
+        - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use node js
+        uses: actions/setup-node@v1
+        with:
+         node-version: ${{ matrix.node-version }}
+      - name: npm install and build and npm install
+        run: |
+          npm install
+          npm run build
+          npm run start
+
+        env: 
+          CI: true   
+
+
+  depoly:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+     - name: executing remote ssh commands using password
+       uses: appleboy/ssh-action@v0.1.8
+       with:
+          host: ${{ secrets.HOST }}
+          username:  ${{ secrets.USER }}
+          key:  ${{ secrets.KEY }}
+          port:  ${{ secrets.PORT }}
+          script: |
+              curl -o-   https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh    | bash
+              . ~/.nvm/nvm.sh
+
+               nvm instal 14
+               npm install -g pm2
+               cd ~/kavitha-clothing_full-ecommerce
+               git pull origin main
+               npm install
+               npm run build
+               npm run start
+               pm2 restart api
